@@ -97,6 +97,8 @@ class LookupController:
         logger.info("Fetching recent loss information for {}...", self.cn)
 
     def get_char_stats(self):
+        logger.info("Fetching zkillboard stats for {}...", self.cn)
+        
         zurl = f"https://zkillboard.com/api/stats/characterID/{self.id}/"
         zrobj = requests.get(zurl)
         stats_json = zrobj.json()
@@ -108,11 +110,17 @@ class LookupController:
         self.bday = erjson["birthday"]
         self.alltime_kills = stats_json["shipsDestroyed"]
         self.alltime_loss = stats_json["shipsLost"]
-        self.alltime_solo_kills = stats_json["soloKills"]
-        self.alltime_solo_losses = stats_json["soloLosses"]
+        if not stats_json["soloKills"]:
+            self.alltime_solo_kills = 0
+        else:
+            self.alltime_solo_kills = stats_json["soloKills"]
+        if not stats_json["soloLosses"]:
+            self.alltime_solo_losses = 0
+        else:
+            self.alltime_solo_losses = stats_json["soloLosses"]
 
         # logger.info("bday: {} all kills: {} all loss: {} solo kill: {} solo loss: {}",self.bday, self.alltime_kills, self.alltime_loss, self.alltime_solo_kills, self.alltime_solo_losses)
-        logger.info("Fetching zkillboard stats for {}...", self.cn)
+
 
     def lazy_init(self, *args):
         k = KillmailResolver()

@@ -86,7 +86,7 @@ class KillmailResolver:
         payload = [self.oppo_ship, self.pla_ship, self.loc_id]
 
 
-        logger.info("{}", payload)
+        # logger.info("{}", payload)
 
         payload = [self.oppo_ship]
         robj = requests.post(url, json=payload)
