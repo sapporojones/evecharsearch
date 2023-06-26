@@ -5,10 +5,14 @@ from datetime import date, datetime
 
 
 class KillmailResolver:
-    def __init__(self, kill_id, kill_hash, char_id):
-        self.i = kill_id
-        self.h = kill_hash
-        self.c = char_id
+    def __init__(self):
+        # breakpoint()
+        # args = list(args[0])
+        # self.i, self.h, self.c = args
+
+        self.i = ""
+        self.h = ""
+        self.c = ""
 
         self.kill_json = ""
 
@@ -23,9 +27,13 @@ class KillmailResolver:
         self.kill_days = ""
         self.kill_date = ""
 
-    def dispatcher(self):
+    def hook(self, *args):
+        args = list(args[0])
+        self.i = args[0]
+        self.h = args[1]
+        self.c = args[2]
         self.get_kill()
-        logger.info("Parsing kill {}...", self.i)
+        # logger.info("Parsing kill {}...", self.i)
         self.parse_kill()
         self.resolve_ids()
 
@@ -37,19 +45,28 @@ class KillmailResolver:
         l = len(rjson)
         # logger.info("JSON Length: {}", l)
 
+
     def parse_kill(self):
         self.kill_time = self.kill_json["killmail_time"]
 
-        if self.kill_json["victim"]["character_id"] == self.c:
-            self.pla_ship = self.kill_json["victim"]["ship_type_id"]
-            self.oppo_ship = (
-                "601"  # for a loss we don't care about opponent ship so set to ibis
-            )
-        else:
-            for attacker in self.kill_json["attackers"]:
-                if attacker["character_id"] == self.c:
-                    self.pla_ship = attacker["ship_type_id"]
-                    self.oppo_ship = self.kill_json["victim"]["ship_type_id"]
+        try:
+            if self.kill_json["victim"]["character_id"] == self.c:
+                self.pla_ship = self.kill_json["victim"]["ship_type_id"]
+                self.oppo_ship = (
+                    "601"  # for a loss we don't care about opponent ship so set to ibis
+                )
+            else:
+                for attacker in self.kill_json["attackers"]:
+                    # breakpoint()
+                    if attacker["character_id"] == self.c:
+                        self.pla_ship = attacker["ship_type_id"]
+                        self.oppo_ship = self.kill_json["victim"]["ship_type_id"]
+                    else:
+                        pass
+        except KeyError:
+            self.pla_ship = 25
+            self.oppo_ship = 29148
+
         self.loc_id = self.kill_json["solar_system_id"]
 
         init_date = self.kill_json["killmail_time"]
@@ -62,18 +79,34 @@ class KillmailResolver:
         # logger.info("time: {}, vic: {}, att: {}, loc: {}", self.kill_time, self.vic_ship, self.att_ship, self.loc_id)
 
     # @snoop
+    # @snoop
     def resolve_ids(self):
         url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
 
         payload = [self.oppo_ship, self.pla_ship, self.loc_id]
 
+
+        logger.info("{}", payload)
+
+        payload = [self.oppo_ship]
         robj = requests.post(url, json=payload)
         rjson = robj.json()
+        self.oppo_ship_type = rjson[0]["name"]
+
+        payload = [self.pla_ship]
+        robj = requests.post(url, json=payload)
+        rjson = robj.json()
+        self.pla_ship_type = rjson[0]["name"]
+
+        payload = [self.loc_id]
+        robj = requests.post(url, json=payload)
+        rjson = robj.json()
+        self.loc_name = rjson[0]["name"]
 
         # logger.info("{}", rjson)
-
-        self.oppo_ship_type = rjson[0]["name"]
-        self.pla_ship_type = rjson[1]["name"]
-        self.loc_name = rjson[2]["name"]
+        #
+        # self.oppo_ship_type = rjson[0]["name"]
+        # self.pla_ship_type = rjson[1]["name"]
+        # self.loc_name = rjson[2]["name"]
 
         # logger.info("vic ship: {} att ship: {} loc: {}", self.vic_ship_type, self.att_ship_type, self.loc_name)

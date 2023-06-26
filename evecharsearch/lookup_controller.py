@@ -2,6 +2,9 @@ import requests
 from loguru import logger
 from killmail_resolver import KillmailResolver
 
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
+
 import snoop
 
 
@@ -31,7 +34,6 @@ class LookupController:
         self.kills_list = ""
         self.losses_list = ""
 
-    def lookup(self):
         self.get_id()
         self.get_kills_json()
         self.get_losses_json()
@@ -41,6 +43,7 @@ class LookupController:
 
     # @snoop
     def get_id(self):
+        logger.info("Getting character ID for {}...", self.cn)
         url = "https://esi.evetech.net/latest/universe/ids/?datasource=tranquility&language=en"
         payload = f'["{self.cn}"]'
 
@@ -52,8 +55,8 @@ class LookupController:
         char_id = req_json["characters"][0]["id"]
         self.id = char_id
 
-        # logger.info("Character ID: {id}", id=char_id)
-        logger.info("Getting character ID for {}...", self.cn)
+        logger.info("Character ID: {id}", id=char_id)
+
 
     # @snoop
     def get_kills_json(self):
@@ -111,27 +114,45 @@ class LookupController:
         # logger.info("bday: {} all kills: {} all loss: {} solo kill: {} solo loss: {}",self.bday, self.alltime_kills, self.alltime_loss, self.alltime_solo_kills, self.alltime_solo_losses)
         logger.info("Fetching zkillboard stats for {}...", self.cn)
 
+    def lazy_init(self, *args):
+        k = KillmailResolver()
+        k.hook(args)
+        return k
+
     def kb_populate(self):
         self.kills_list = []
-        l = len(self.recent_kill_hashes)
 
         logger.info("Populating recent kills...")
 
-        for n in range(0, l):
-            k = KillmailResolver(
-                self.recent_kills[n], self.recent_kill_hashes[n], self.id
+        # hacky list expansion
+        hacky_char_id_list = []
+        recent_kills = self.recent_kills
+        recent_kill_hashes = self.recent_kill_hashes
+        for x in self.recent_kills:
+            hacky_char_id_list.append(self.id)
+
+        with ThreadPoolExecutor(max_workers=5) as executor:
+
+            future_result = executor.map(
+                self.lazy_init, recent_kills, recent_kill_hashes, hacky_char_id_list
             )
-            k.dispatcher()
-            self.kills_list.append(k)
+
+            for future in future_result:
+                self.kills_list.append(future)
 
         logger.info("Populating recent losses...")
         self.losses_list = []
-        for n in range(0, l):
-            k = KillmailResolver(
-                self.recent_losses[n], self.recent_loss_hashes[n], self.id
+        with ThreadPoolExecutor(max_workers=5) as executor:
+
+            future_result = executor.map(
+                self.lazy_init,
+                self.recent_losses,
+                self.recent_loss_hashes,
+                hacky_char_id_list,
             )
-            k.dispatcher()
-            self.losses_list.append(k)
+
+            for future in future_result:
+                self.losses_list.append(future)
 
         # logger.info("{}", self.kills_list[0].att_ship_type)
 
