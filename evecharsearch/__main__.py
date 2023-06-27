@@ -5,7 +5,7 @@ from lookup_controller import LookupController
 
 
 @click.command()
-@click.option("--name", default="Sapporo Jones", help="Name of character to search.")
+@click.option("--name", default="Baldur Kilgannon", help="Name of character to search.")
 def main(name):
     """A CLI app to find public information about an EVE Online character"""
     LookupController(name)
