@@ -30,6 +30,10 @@ class LookupController:
         self.kills_list = ""
         self.losses_list = ""
         self.max_n = max_n
+        self.corp_id = ""
+        self.alice_id = ""
+        self.corp_name = ""
+        self.alice_name = ""
 
         self.get_id()
         self.get_kills_json()
@@ -59,7 +63,7 @@ class LookupController:
 
     # @snoop
     def get_kills_json(self):
-        logger.info("Fetching recent kill information for {}...", self.cn)
+        logger.info("Fetching recent kill information...")
         url = f"https://zkillboard.com/api/kills/characterID/{self.id}/"
         robj = requests.get(url)
         kills_json = robj.json()
@@ -75,7 +79,7 @@ class LookupController:
         self.recent_kill_hashes = recent_kill_hashes
 
     def get_losses_json(self):
-        logger.info("Fetching recent loss information for {}...", self.cn)
+        logger.info("Fetching recent loss information...")
         url = f"https://zkillboard.com/api/losses/characterID/{self.id}/"
         robj = requests.get(url)
         losses_json = robj.json()
@@ -91,7 +95,7 @@ class LookupController:
         self.recent_loss_hashes = recent_loss_hashes
 
     def get_char_stats(self):
-        logger.info("Fetching zkillboard stats for {}...", self.cn)
+        logger.info("Fetching zkillboard stats...")
 
         zurl = f"https://zkillboard.com/api/stats/characterID/{self.id}/"
         zrobj = requests.get(zurl)
@@ -108,6 +112,28 @@ class LookupController:
         self.bday = erjson["birthday"]
         self.alltime_kills = stats_json["shipsDestroyed"]
         self.alltime_loss = stats_json["shipsLost"]
+        self.corp_id = erjson["corporation_id"]
+        try:
+            self.alice_id = erjson["alliance_id"]
+        except KeyError:
+            self.alice_id = 0
+
+        url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
+        if self.alice_id == 0:
+            payload = [self.corp_id]
+            robj = requests.post(url, json=payload)
+            rjson = robj.json()
+            self.corp_name = rjson["name"]
+        else:
+            payload = [self.corp_id, self.alice_id]
+            robj = requests.post(url, json=payload)
+            rjson = robj.json()
+            for item in rjson:
+                if item["category"] == "corporation":
+                    self.corp_name = item["name"]
+                else:
+                    self.alice_name = item["name"]
+
 
         # Zkill might now show this regardless of if number is 0, commenting out for testing
         if not stats_json["soloKills"]:
@@ -126,18 +152,17 @@ class LookupController:
 
     def kb_populate(self):
         self.kills_list = []
-
-        logger.info("Populating recent kills...")
+        hacky_char_id_list = []
+        self.losses_list = []
 
         # hacky list expansion
-        hacky_char_id_list = []
         recent_kills = self.recent_kills
         recent_kill_hashes = self.recent_kill_hashes
         for x in self.recent_kills:
             hacky_char_id_list.append(self.id)
 
         with ThreadPoolExecutor(max_workers=5) as executor:
-
+            logger.info("Populating recent kills...")
             future_result = executor.map(
                 self.lazy_init, recent_kills, recent_kill_hashes, hacky_char_id_list
             )
@@ -145,10 +170,8 @@ class LookupController:
             for future in future_result:
                 self.kills_list.append(future)
 
-        logger.info("Populating recent losses...")
-        self.losses_list = []
         with ThreadPoolExecutor(max_workers=5) as executor:
-
+            logger.info("Populating recent losses...")
             future_result = executor.map(
                 self.lazy_init,
                 self.recent_losses,
@@ -166,6 +189,10 @@ class LookupController:
         print(f"Character ID: {self.id}")
         print(f"Character born on: {self.bday}")
         print(f"")
+        print(f"Pilot is a member of {self.corp_name}")
+        if self.alice_id != 0:
+            print(f"{self.corp_name} is a member of {self.alice_name}")
+        print(f"")
         print(f"Total kills: {self.alltime_kills}")
         print(f"Total losses: {self.alltime_loss}")
         print(f"Total solo kills: {self.alltime_solo_kills}")
@@ -174,6 +201,7 @@ class LookupController:
         print(
             f"Last kill was {self.kills_list[0].kill_date} which was {self.kills_list[0].kill_days} days ago"
         )
+
         print(
             f"Last loss was {self.losses_list[0].kill_date} which was {self.losses_list[0].kill_days} days ago"
         )
@@ -184,10 +212,11 @@ class LookupController:
         print(f"Most recent kills:")
         for idx, kill in enumerate(self.kills_list):
             print(
-                f"( https://zkillboard.com/kill/{self.kills_list[idx].i}/ ) On {self.kills_list[idx].kill_date} Killed a {self.kills_list[idx].oppo_ship_type} while flying a {self.kills_list[idx].pla_ship_type} in {self.kills_list[idx].loc_name}"
+                f"( https://zkillboard.com/kill/{self.kills_list[idx].i}/ ) On {self.kills_list[idx].kill_date} Killed a(n) {self.kills_list[idx].oppo_ship_type} while flying a {self.kills_list[idx].pla_ship_type} in {self.kills_list[idx].loc_name}"
             )
+        print(f"")
         print(f"Most recent losses:")
         for idx, loss in enumerate(self.losses_list):
             print(
-                f"( https://zkillboard.com/kill/{self.losses_list[idx].i}/ ) On {self.losses_list[idx].kill_date} Lost a {self.losses_list[idx].pla_ship_type} in {self.losses_list[idx].loc_name}"
+                f"( https://zkillboard.com/kill/{self.losses_list[idx].i}/ ) On {self.losses_list[idx].kill_date} Lost a(n) {self.losses_list[idx].pla_ship_type} in {self.losses_list[idx].loc_name}"
             )
