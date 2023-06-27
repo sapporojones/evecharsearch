@@ -9,7 +9,7 @@ from killmail_resolver import KillmailResolver
 
 
 class LookupController:
-    def __init__(self, char_name):
+    def __init__(self, char_name, max_n):
         self.cn = char_name
         self.id = ""
         self.kills_json = ""
@@ -29,6 +29,7 @@ class LookupController:
         self.last_loss_readable = ""
         self.kills_list = ""
         self.losses_list = ""
+        self.max_n = max_n
 
         self.get_id()
         self.get_kills_json()
@@ -62,7 +63,7 @@ class LookupController:
 
         recent_kills = []
         recent_kill_hashes = []
-        for n in range(0, 5):
+        for n in range(0, self.max_n):
             recent_kills.append(kills_json[n]["killmail_id"])
             recent_kill_hashes.append(kills_json[n]["zkb"]["hash"])
 
@@ -78,7 +79,7 @@ class LookupController:
 
         recent_losses = []
         recent_loss_hashes = []
-        for n in range(0, 5):
+        for n in range(0, self.max_n):
             recent_losses.append(losses_json[n]["killmail_id"])
             recent_loss_hashes.append(losses_json[n]["zkb"]["hash"])
 
@@ -99,14 +100,16 @@ class LookupController:
         self.bday = erjson["birthday"]
         self.alltime_kills = stats_json["shipsDestroyed"]
         self.alltime_loss = stats_json["shipsLost"]
-        if not stats_json["soloKills"]:
-            self.alltime_solo_kills = 0
-        else:
-            self.alltime_solo_kills = stats_json["soloKills"]
-        if not stats_json["soloLosses"]:
-            self.alltime_solo_losses = 0
-        else:
-            self.alltime_solo_losses = stats_json["soloLosses"]
+
+        # Zkill might now show this regardless of if number is 0, commenting out for testing
+        # if not stats_json["soloKills"]:
+        #     self.alltime_solo_kills = 0
+        # else:
+        #     self.alltime_solo_kills = stats_json["soloKills"]
+        # if not stats_json["soloLosses"]:
+        #     self.alltime_solo_losses = 0
+        # else:
+        #     self.alltime_solo_losses = stats_json["soloLosses"]
 
     def lazy_init(self, *args):
         k = KillmailResolver()
