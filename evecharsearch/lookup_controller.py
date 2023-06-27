@@ -1,15 +1,11 @@
-import requests
-from loguru import logger
-from killmail_resolver import KillmailResolver
-
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
+from loguru import logger
+import requests
 import snoop
 
-
-# logger template
-# logger.info("", )
+from killmail_resolver import KillmailResolver
 
 
 class LookupController:
@@ -47,19 +43,18 @@ class LookupController:
         url = "https://esi.evetech.net/latest/universe/ids/?datasource=tranquility&language=en"
         payload = f'["{self.cn}"]'
 
-        logger.info("Name: {cn} | Payload: {payload}", cn=self.cn, payload=payload)
+        # logger.info("Name: {cn} | Payload: {payload}", cn=self.cn, payload=payload)
 
         req_obj = requests.post(url, data=payload)
         req_json = req_obj.json()
-        # logger.debug(req_json)
         char_id = req_json["characters"][0]["id"]
         self.id = char_id
 
         logger.info("Character ID: {id}", id=char_id)
 
-
     # @snoop
     def get_kills_json(self):
+        logger.info("Fetching recent kill information for {}...", self.cn)
         url = f"https://zkillboard.com/api/kills/characterID/{self.id}/"
         robj = requests.get(url)
         kills_json = robj.json()
@@ -74,11 +69,8 @@ class LookupController:
         self.recent_kills = recent_kills
         self.recent_kill_hashes = recent_kill_hashes
 
-        # logger.info(self.recent_kills)
-        # logger.info(self.recent_kill_hashes)
-        logger.info("Fetching recent kill information for {}...", self.cn)
-
     def get_losses_json(self):
+        logger.info("Fetching recent loss information for {}...", self.cn)
         url = f"https://zkillboard.com/api/losses/characterID/{self.id}/"
         robj = requests.get(url)
         losses_json = robj.json()
@@ -92,13 +84,10 @@ class LookupController:
 
         self.recent_losses = recent_losses
         self.recent_loss_hashes = recent_loss_hashes
-        # logger.info(self.recent_losses)
-        # logger.info(self.recent_loss_hashes)
-        logger.info("Fetching recent loss information for {}...", self.cn)
 
     def get_char_stats(self):
         logger.info("Fetching zkillboard stats for {}...", self.cn)
-        
+
         zurl = f"https://zkillboard.com/api/stats/characterID/{self.id}/"
         zrobj = requests.get(zurl)
         stats_json = zrobj.json()
@@ -118,9 +107,6 @@ class LookupController:
             self.alltime_solo_losses = 0
         else:
             self.alltime_solo_losses = stats_json["soloLosses"]
-
-        # logger.info("bday: {} all kills: {} all loss: {} solo kill: {} solo loss: {}",self.bday, self.alltime_kills, self.alltime_loss, self.alltime_solo_kills, self.alltime_solo_losses)
-
 
     def lazy_init(self, *args):
         k = KillmailResolver()
@@ -161,8 +147,6 @@ class LookupController:
 
             for future in future_result:
                 self.losses_list.append(future)
-
-        # logger.info("{}", self.kills_list[0].att_ship_type)
 
     def print_report(self):
         logger.info("Generating report...")

@@ -1,15 +1,12 @@
-import requests
-from loguru import logger
-import snoop
 from datetime import date, datetime
+
+from loguru import logger
+import requests
+import snoop
 
 
 class KillmailResolver:
     def __init__(self):
-        # breakpoint()
-        # args = list(args[0])
-        # self.i, self.h, self.c = args
-
         self.i = ""
         self.h = ""
         self.c = ""
@@ -33,7 +30,6 @@ class KillmailResolver:
         self.h = args[1]
         self.c = args[2]
         self.get_kill()
-        # logger.info("Parsing kill {}...", self.i)
         self.parse_kill()
         self.resolve_ids()
 
@@ -42,9 +38,6 @@ class KillmailResolver:
         robj = requests.get(url)
         rjson = robj.json()
         self.kill_json = rjson
-        l = len(rjson)
-        # logger.info("JSON Length: {}", l)
-
 
     def parse_kill(self):
         self.kill_time = self.kill_json["killmail_time"]
@@ -76,17 +69,10 @@ class KillmailResolver:
         dd = datetime.utcnow().date() - datetime.strptime(date_snip, "%Y-%m-%d").date()
         self.kill_days = dd.days
 
-        # logger.info("time: {}, vic: {}, att: {}, loc: {}", self.kill_time, self.vic_ship, self.att_ship, self.loc_id)
-
-    # @snoop
-    # @snoop
     def resolve_ids(self):
         url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
 
-        payload = [self.oppo_ship, self.pla_ship, self.loc_id]
-
-
-        # logger.info("{}", payload)
+        # payload = [self.oppo_ship, self.pla_ship, self.loc_id]
 
         payload = [self.oppo_ship]
         robj = requests.post(url, json=payload)
@@ -102,11 +88,3 @@ class KillmailResolver:
         robj = requests.post(url, json=payload)
         rjson = robj.json()
         self.loc_name = rjson[0]["name"]
-
-        # logger.info("{}", rjson)
-        #
-        # self.oppo_ship_type = rjson[0]["name"]
-        # self.pla_ship_type = rjson[1]["name"]
-        # self.loc_name = rjson[2]["name"]
-
-        # logger.info("vic ship: {} att ship: {} loc: {}", self.vic_ship_type, self.att_ship_type, self.loc_name)
