@@ -79,19 +79,26 @@ class KillmailResolver:
     def resolve_ids(self):
         url = "https://esi.evetech.net/latest/universe/names/?datasource=tranquility"
 
-        # payload = [self.oppo_ship, self.pla_ship, self.loc_id]
+        payload = [self.oppo_ship, self.pla_ship, self.loc_id]
+        if len(payload) == len(set(payload)):
+            robj = requests.post(url, json=payload)
+            rjson = robj.json()
+            self.oppo_ship_type = rjson[0]["name"]
+            self.pla_ship_type = rjson[1]["name"]
+            self.loc_name = rjson[2]["name"]
 
-        payload = [self.oppo_ship]
-        robj = requests.post(url, json=payload)
-        rjson = robj.json()
-        self.oppo_ship_type = rjson[0]["name"]
+        else:
+            payload = [self.oppo_ship]
+            robj = requests.post(url, json=payload)
+            rjson = robj.json()
+            self.oppo_ship_type = rjson[0]["name"]
 
-        payload = [self.pla_ship]
-        robj = requests.post(url, json=payload)
-        rjson = robj.json()
-        self.pla_ship_type = rjson[0]["name"]
+            payload = [self.pla_ship]
+            robj = requests.post(url, json=payload)
+            rjson = robj.json()
+            self.pla_ship_type = rjson[0]["name"]
 
-        payload = [self.loc_id]
-        robj = requests.post(url, json=payload)
-        rjson = robj.json()
-        self.loc_name = rjson[0]["name"]
+            payload = [self.loc_id]
+            robj = requests.post(url, json=payload)
+            rjson = robj.json()
+            self.loc_name = rjson[0]["name"]
