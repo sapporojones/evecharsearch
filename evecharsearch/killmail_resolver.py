@@ -59,7 +59,7 @@ class KillmailResolver:
         # The below KeyError is the likely result of the kill showing a weapon type instead of a ship
         except KeyError:
             for attacker in self.kill_json["attackers"]:
-                # skip character_id checks on npc participants
+                # skip character_id checks on npc participants which have a block length of 5
                 if len(attacker) == 5:
                     pass
                 else:
