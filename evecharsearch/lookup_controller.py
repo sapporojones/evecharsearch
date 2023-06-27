@@ -173,10 +173,10 @@ class LookupController:
         print(f"Most recent kills:")
         for idx, kill in enumerate(self.kills_list):
             print(
-                f"( https://zkillboard.com/kill/{self.kills_list[idx].i}/ ) On {self.kills_list[idx].kill_date} {self.cn} killed a {self.kills_list[idx].oppo_ship_type} while flying a {self.kills_list[idx].pla_ship_type}"
+                f"( https://zkillboard.com/kill/{self.kills_list[idx].i}/ ) On {self.kills_list[idx].kill_date} Killed a {self.kills_list[idx].oppo_ship_type} while flying a {self.kills_list[idx].pla_ship_type} in {self.kills_list[idx].loc_name}"
             )
         print(f"Most recent losses:")
         for idx, loss in enumerate(self.losses_list):
             print(
-                f"( https://zkillboard.com/kill/{self.losses_list[idx].i}/ ) On {self.losses_list[idx].kill_date} {self.cn} lost a {self.losses_list[idx].pla_ship_type}"
+                f"( https://zkillboard.com/kill/{self.losses_list[idx].i}/ ) On {self.losses_list[idx].kill_date} Lost a {self.losses_list[idx].pla_ship_type} in {self.losses_list[idx].loc_name}"
             )
