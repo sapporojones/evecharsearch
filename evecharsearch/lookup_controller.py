@@ -95,7 +95,11 @@ class LookupController:
 
         zurl = f"https://zkillboard.com/api/stats/characterID/{self.id}/"
         zrobj = requests.get(zurl)
-        stats_json = zrobj.json()
+        try:
+            stats_json = zrobj.json()
+        except requests.exceptions.JSONDecodeError:
+            print("Zkill didn't respond, please wait a few moments and try again...")
+            quit()
 
         eurl = f"https://esi.evetech.net/latest/characters/{self.id}/"
         erobj = requests.get(eurl)
@@ -106,14 +110,14 @@ class LookupController:
         self.alltime_loss = stats_json["shipsLost"]
 
         # Zkill might now show this regardless of if number is 0, commenting out for testing
-        # if not stats_json["soloKills"]:
-        #     self.alltime_solo_kills = 0
-        # else:
-        #     self.alltime_solo_kills = stats_json["soloKills"]
-        # if not stats_json["soloLosses"]:
-        #     self.alltime_solo_losses = 0
-        # else:
-        #     self.alltime_solo_losses = stats_json["soloLosses"]
+        if not stats_json["soloKills"]:
+            self.alltime_solo_kills = 0
+        else:
+            self.alltime_solo_kills = stats_json["soloKills"]
+        if not stats_json["soloLosses"]:
+            self.alltime_solo_losses = 0
+        else:
+            self.alltime_solo_losses = stats_json["soloLosses"]
 
     def lazy_init(self, *args):
         k = KillmailResolver()
@@ -157,26 +161,26 @@ class LookupController:
 
     def print_report(self):
         logger.info("Generating report...")
-        print(f"\n")
+        print(f"")
         print(f"Character name: {self.cn}")
         print(f"Character ID: {self.id}")
         print(f"Character born on: {self.bday}")
-        print(f"\n")
+        print(f"")
         print(f"Total kills: {self.alltime_kills}")
         print(f"Total losses: {self.alltime_loss}")
         print(f"Total solo kills: {self.alltime_solo_kills}")
         print(f"Total solo losses: {self.alltime_solo_losses}")
-        print(f"\n")
+        print(f"")
         print(
             f"Last kill was {self.kills_list[0].kill_date} which was {self.kills_list[0].kill_days} days ago"
         )
         print(
             f"Last loss was {self.losses_list[0].kill_date} which was {self.losses_list[0].kill_days} days ago"
         )
-        print(f"\n")
+        print(f"")
         print(f"Zkill url: https://zkillboard.com/character/{self.id}/")
         print(f"Evewho url: https://evewho.com/character/{self.id}")
-        print(f"\n")
+        print(f"")
         print(f"Most recent kills:")
         for idx, kill in enumerate(self.kills_list):
             print(
