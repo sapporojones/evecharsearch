@@ -48,7 +48,11 @@ class LookupController:
 
         req_obj = requests.post(url, data=payload)
         req_json = req_obj.json()
-        char_id = req_json["characters"][0]["id"]
+        try:
+            char_id = req_json["characters"][0]["id"]
+        except KeyError:
+            print("No character found, check spelling.")
+            quit()
         self.id = char_id
 
         logger.info("Character ID: {id}", id=char_id)
@@ -153,7 +157,7 @@ class LookupController:
 
     def print_report(self):
         logger.info("Generating report...")
-        print(f"\n\n\n")
+        print(f"\n")
         print(f"Character name: {self.cn}")
         print(f"Character ID: {self.id}")
         print(f"Character born on: {self.bday}")
