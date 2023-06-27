@@ -56,9 +56,16 @@ class KillmailResolver:
                         self.oppo_ship = self.kill_json["victim"]["ship_type_id"]
                     else:
                         pass
+        # The below KeyError is the likely result of the kill showing a weapon type instead of a ship
         except KeyError:
-            self.pla_ship = 25
-            self.oppo_ship = 29148
+            for attacker in self.kill_json["attackers"]:
+                # skip character_id checks on npc participants which have a block length of 5
+                if len(attacker) == 5:
+                    pass
+                else:
+                    if attacker["character_id"] == self.c:
+                        self.pla_ship = attacker["weapon_type_id"]
+                        self.oppo_ship = self.kill_json["victim"]["ship_type_id"]
 
         self.loc_id = self.kill_json["solar_system_id"]
 
